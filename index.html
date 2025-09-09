@@ -1,0 +1,876 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNITEN Electricity Bill System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: radial-gradient(circle at top left, #eeeda6 0%, #f3d2a7 50%, #ffffff 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #efa9a3 0%, #f75a3a 100%);
+            color: white;
+            padding: 30px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .header-logo img {
+                height: 80px; /* Resize logo height */
+                width: auto; /* Keep aspect ratio */
+            }
+
+        .header-center {
+            flex: 1;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin: 0;
+        }
+
+        .language-toggle {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .language-toggle:hover {
+                background: white;
+                color: #000000;
+            }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #f7dab5;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+            .section::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(90deg, #fdf9db 0%, #dadbb799 50%, #ffffff 100%);
+            }
+
+            .section h2 {
+                color: #000000;
+                margin-bottom: 20px;
+                font-size: 1.5em;
+                border-bottom: 2px solid #ffd800;
+                padding-bottom: 10px;
+                position: relative;
+            }
+
+                .section h2::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 0;
+                    width: 60px;
+                    height: 3px;
+                    background: linear-gradient(90deg, #ff6a00, #ffd800);
+                    border-radius: 2px;
+                }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+            .form-group label {
+                font-weight: bold;
+                margin-bottom: 8px;
+                color: #495057;
+            }
+
+            .form-group input, .form-group select {
+                padding: 12px;
+                border: 2px solid #e9ecef;
+                border-radius: 12px;
+                font-size: 16px;
+                transition: all 0.3s ease;
+                background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            }
+
+                .form-group input:focus, .form-group select:focus {
+                    outline: none;
+                    border-color: #e8d9c1;
+                    box-shadow: 0 0 0 3px rgba(255, 154, 158, 0.2);
+                    background: white;
+                }
+
+        .readonly {
+            background-color: #ffffff !important;
+            cursor: not-allowed;
+        }
+
+        .charge-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+            .charge-table th, .charge-table td {
+                padding: 18px;
+                text-align: left;
+                border-bottom: 1px solid #f0ece4;
+            }
+
+            .charge-table th {
+                background: linear-gradient(135deg, #efc680 0%, #efc690 100%);
+                color: white;
+                font-weight: bold;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .charge-table tr:nth-child(even) {
+                background-color: #ffffff;
+            }
+
+            .charge-table tr:hover {
+                background-color: #eee3e3;
+                transform: scale(1.01);
+                transition: all 0.3s ease;
+            }
+
+            .charge-table input {
+                width: 100%;
+                padding: 10px;
+                border: 2px solid #000000;
+                border-radius: 6px;
+                transition: border-color 0.3s ease;
+            }
+
+                .charge-table input:focus {
+                    border-color: #000000;
+                    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+                }
+
+        .total-row {
+            background-color: #ffffff !important;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #f2f4c8 0%, #f3ddcd 50%, #f9eb9d 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(255, 154, 158, 0.4);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+            .generate-btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 12px 35px rgba(255, 154, 158, 0.5);
+                background: linear-gradient(135deg, #f9eb9d 0%, #f2f4c8 50%, #f3ddcd 100%);
+            }
+
+        .pdf-content {
+            display: none;
+            background: white;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            color: #333;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+
+        .pdf-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #f63a2b;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .pdf-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .pdf-header .logo-placeholder {
+            width: 60px;
+            height: 60px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #666;
+        }
+
+        .pdf-header-text {
+            text-align: left;
+        }
+
+        .pdf-header h1 {
+            color: #000000;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .pdf-header h2 {
+            font-size: 12px;
+            margin: 2px 0;
+        }
+
+        .pdf-header-right {
+            text-align: right;
+            font-size: 10px;
+        }
+
+        .customer-billing-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .pdf-section {
+            margin-bottom: 15px;
+        }
+
+            .pdf-section h3 {
+                background: #f63a2b;
+                color: white;
+                padding: 6px 10px;
+                margin-bottom: 10px;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+            }
+
+                .pdf-section h3 i {
+                    margin-right: 8px;
+                }
+
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+
+            .compact-table td {
+                border: 1px solid #ddd;
+                padding: 4px 6px;
+                text-align: left;
+            }
+
+                .compact-table td:first-child {
+                    font-weight: bold;
+                    background: #f8f9fa;
+                    width: 40%;
+                }
+
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+
+            .pdf-table th, .pdf-table td {
+                border: 1px solid #ddd;
+                padding: 6px 8px;
+                text-align: left;
+            }
+
+            .pdf-table th {
+                background: #f8f9fa;
+                font-weight: bold;
+            }
+
+        .contact-footer {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+        }
+
+        .qr-placeholder {
+            width: 60px;
+            height: 60px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #666;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                height: 100vh !important;
+                overflow: hidden !important;
+            }
+
+                body * {
+                    visibility: hidden;
+                }
+
+            .pdf-content, .pdf-content * {
+                visibility: visible;
+            }
+
+            .pdf-content {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100vh;
+                display: block !important;
+                page-break-inside: avoid;
+                page-break-after: avoid;
+                overflow: hidden;
+            }
+
+            @page {
+                size: A4;
+                margin: 0.5in;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-logo"><img src="Universiti_Tenaga_Nasional_Logo.png" alt="UNITEN Logo" /></div>
+            <div class="header-center">
+                <h1 id="mainTitle">UNITEN Electricity Billing</h1>
+            </div>
+            <button class="language-toggle" onclick="toggleLanguage()" id="langToggle">BM</button>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2 id="userInfoTitle">User Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="userName" id="nameLabel">Name:</label>
+                        <input type="text" id="userName" placeholder="Enter your name">
+                    </div>
+                    <div class="form-group">
+                        <label for="meterNumber" id="meterLabel">Meter Number:</label>
+                        <input type="text" id="meterNumber" placeholder="Enter meter number">
+                    </div>
+                    <div class="form-group">
+                        <label for="accountNumber" id="accountLabel">Account Number:</label>
+                        <input type="text" id="accountNumber" placeholder="Enter account number">
+                    </div>
+                    <div class="form-group">
+                        <label for="address" id="addressLabel">Address:</label>
+                        <input type="text" id="address" placeholder="Enter your address">
+                    </div>
+                    <div class="form-group">
+                        <label for="tariff" id="tariffLabel">Tariff:</label>
+                        <input type="text" id="tariff" value="Non-Domestic Low Voltage General Tariff" readonly class="readonly">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 id="billingTitle">Billing Period</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="startDate" id="startDateLabel">Starting Date:</label>
+                        <input type="date" id="startDate" onchange="calculateEndDate()">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate" id="endDateLabel">Ending Date:</label>
+                        <input type="date" id="endDate" readonly class="readonly">
+                    </div>
+                    <div class="form-group">
+                        <label for="billingDays" id="billingDaysLabel">Billing Period (Days):</label>
+                        <input type="number" id="billingDays" readonly class="readonly">
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentDueDate" id="paymentDueDateLabel">Payment Due Date:</label>
+                        <input type="date" id="paymentDueDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentDate" id="paymentDateLabel">User Payment Date:</label>
+                        <input type="date" id="paymentDate" onchange="calculateLatePayment()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 id="meterReadingTitle">Meter Reading</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="meterBefore" id="meterBeforeLabel">Meter Reading Before:</label>
+                        <input type="number" id="meterBefore" placeholder="Enter previous reading" onchange="calculateUsage()">
+                    </div>
+                    <div class="form-group">
+                        <label for="meterCurrent" id="meterCurrentLabel">Meter Reading Current:</label>
+                        <input type="number" id="meterCurrent" placeholder="Enter current reading" onchange="calculateUsage()">
+                    </div>
+                    <div class="form-group">
+                        <label for="totalUsage" id="totalUsageLabel">Total Usage (kWh):</label>
+                        <input type="number" id="totalUsage" readonly class="readonly">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 id="chargeTitle">Caj Penjanaan (Charges)</h2>
+                <table class="charge-table">
+                    <thead>
+                        <tr>
+                            <th id="descHeader">Type of Charges</th>
+                            <th id="usageHeader">Usage/Quantity</th>
+                            <th id="amountHeader">Amount (RM)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="energyDesc">Energy Charge (RM0.2703/kWh)</td>
+                            <td><input type="number" id="energyUsage" readonly class="readonly"></td>
+                            <td><input type="number" id="energyAmount" readonly class="readonly"></td>
+                        </tr>
+                        <tr>
+                            <td id="afaDesc">Automatic Fuel Adjustment (AFA) (RM/kWh)</td>
+                            <td><input type="number" id="afaRate" placeholder="Enter AFA rate" onchange="calculateCharges()"></td>
+                            <td><input type="number" id="afaAmount" readonly class="readonly"></td>
+                        </tr>
+                        <tr>
+                            <td id="capacityDesc">Capacity Charge (RM0.0883/kWh)</td>
+                            <td><input type="number" id="capacityUsage" readonly class="readonly"></td>
+                            <td><input type="number" id="capacityAmount" readonly class="readonly"></td>
+                        </tr>
+                        <tr>
+                            <td id="networkDesc">Network Fees (RM0.1482/kWh)</td>
+                            <td><input type="number" id="networkUsage" readonly class="readonly"></td>
+                            <td><input type="number" id="networkAmount" readonly class="readonly"></td>
+                        </tr>
+                        <tr>
+                            <td id="retailDesc">Retail Charge (RM)</td>
+                            <td></td>
+                            <td><input type="number" id="retailAmount" value="20" readonly class="readonly"></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td><strong id="subtotalDesc">Subtotal Amount (RM)</strong></td>
+                            <td></td>
+                            <td><input type="number" id="subtotalAmount" readonly class="readonly"></td>
+                        </tr>
+                        <tr>
+                            <td id="kwtbbDesc">KWTBB (1.6%) (RM)</td>
+                            <td><input type="number" id="kwtbbBase" readonly class="readonly"></td>
+                            <td><input type="number" id="kwtbbAmount" readonly class="readonly"></td>
+                        </tr>
+                        <tr>
+                            <td id="lateDesc">Late Payment Surcharge (1%/month) (RM)</td>
+                            <td><input type="number" id="lateDays" readonly class="readonly"></td>
+                            <td><input type="number" id="lateAmount" readonly class="readonly"></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td><strong id="totalDesc">Total Charge Amount</strong></td>
+                            <td></td>
+                            <td><input type="number" id="totalChargeAmount" readonly class="readonly"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="generate-btn" onclick="generatePDF()">Generate PDF Bill</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="pdf-content" id="pdfContent">
+        <div class="pdf-header">
+            <div class="pdf-header-left">
+                <div class="pdf-logo">
+                    <img src="Universiti_Tenaga_Nasional_Logo.png" alt="UNITEN Logo" width="90" height="60">
+                </div>
+                <div class="pdf-header-text">
+                    <h1>UNIVERSITI TENAGA NASIONAL (UNITEN)</h1>
+                    <h2>ELECTRICITY BILL</h2>
+                </div>
+            </div>
+            <div class="pdf-header-right">
+                <div><strong>Account No:</strong> <span id="pdfAccountNumber"></span></div>
+                <div><strong>Bill Date:</strong> <span id="pdfBillDate"></span></div>
+                <div><strong>Due Date:</strong> <span id="pdfDueDate"></span></div>
+            </div>
+        </div>
+
+        <div class="customer-billing-section">
+            <div class="pdf-section" style="width: 48%;">
+                <h3><i class="fas fa-user"></i>Customer Information</h3>
+                <table class="compact-table">
+                    <tr><td>Name:</td><td id="pdfUserName"></td></tr>
+                    <tr><td>Meter No:</td><td id="pdfMeterNumber"></td></tr>
+                    <tr><td>Address:</td><td id="pdfAddress"></td></tr>
+                    <tr><td>Tariff:</td><td id="pdfTariff"></td></tr>
+                </table>
+            </div>
+            <div class="pdf-section" style="width: 48%;">
+                <h3><i class="fas fa-calendar-alt"></i>Billing & Meter Info</h3>
+                <table class="compact-table">
+                    <tr><td>Billing Period:</td><td id="pdfBillingPeriodDisplay"></td></tr>
+                    <tr><td>Billing Days:</td><td id="pdfBillingDays"></td></tr>
+                    <tr><td>Due Date:</td><td id="pdfPaymentDueDate"></td></tr>
+                    <tr><td>Previous Reading (kWh):</td><td id="pdfMeterBefore"></td></tr>
+                    <tr><td>Current Reading (kWh):</td><td id="pdfMeterCurrent"></td></tr>
+                    <tr><td>Usage (kWh):</td><td id="pdfTotalUsage"></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="pdf-section">
+            <h3><i class="fas fa-calculator"></i>Charges Breakdown</h3>
+            <table class="pdf-table">
+                <tr><th>Type of Charges</th><th>Usage/Qty</th><th>Amount (RM)</th></tr>
+                <tr><td>Energy Charge (RM0.2703/kWh)</td><td id="pdfEnergyUsage"></td><td id="pdfEnergyAmount"></td></tr>
+                <tr><td>Automatic Fuel Adjustment (AFA) (RM0.00/kWh)</td><td id="pdfAfaUsage"></td><td id="pdfAfaAmount"></td></tr>
+                <tr><td>Capacity Charge (RM0.0883/kWh)</td><td id="pdfCapacityUsage"></td><td id="pdfCapacityAmount"></td></tr>
+                <tr><td>Network Fees (RM0.1482/kWh)</td><td id="pdfNetworkUsage"></td><td id="pdfNetworkAmount"></td></tr>
+                <tr><td>Retail Charge (RM)</td><td></td><td id="pdfRetailAmount"></td></tr>
+                <tr style="background-color: #f0f0f0;"><td><strong>Subtotal (RM)</strong></td><td></td><td><strong id="pdfSubtotalAmount"></strong></td></tr>
+                <tr><td>KWTBB (1.6%) (RM)</td><td id="pdfKwtbbBase"></td><td id="pdfKwtbbAmount"></td></tr>
+                <tr><td>Late Payment Surcharge (1%/month) (RM)</td><td id="pdfLateDays"> days</td><td id="pdfLateAmount"></td></tr>
+                <tr style="background-color: #fda7a7; font-weight: bold; font-size: 1.1em;">
+                    <td><strong>TOTAL AMOUNT DUE (RM)</strong></td>
+                    <td></td>
+                    <td><strong>RM <span id="pdfTotalChargeAmount"></span></strong></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="contact-footer">
+            <div class="contact-info">
+                <div><i class="fas fa-phone"></i> +603-8921-7000</div>
+                <div><i class="fas fa-envelope"></i> info@uniten.edu.my</div>
+                <div><i class="fas fa-globe"></i> www.uniten.edu.my</div>
+            </div>
+            <div class="qr-placeholder">QR PAY</div>
+            <p><strong>Thank you for choosing UNITEN</strong></p>
+            <p>Scan QR code above for online payment</p>
+        </div>
+    </div>
+
+    <script>
+        let currentLanguage = 'en';
+
+        // FIXED: Calculate end date to properly get last day of month
+        function calculateEndDate() {
+            const startDateValue = document.getElementById('startDate').value;
+            if (startDateValue) {
+                const startDate = new Date(startDateValue + 'T00:00:00');
+                const year = startDate.getFullYear();
+                const month = startDate.getMonth();
+
+                // Get the last day of the month - CORRECTED
+                const endDate = new Date(year, month + 1, 1);
+
+                document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+
+                // Calculate billing days correctly (inclusive of both start and end dates)
+                const timeDiff = endDate.getTime() - startDate.getTime();
+                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                document.getElementById('billingDays').value = daysDiff;
+
+                // Set payment due date (usually 21 days after end date)
+                const dueDate = new Date(endDate);
+                dueDate.setDate(dueDate.getDate() + 21);
+                document.getElementById('paymentDueDate').value = dueDate.toISOString().split('T')[0];
+            }
+        }
+
+        function calculateUsage() {
+            const meterBefore = parseFloat(document.getElementById('meterBefore').value) || 0;
+            const meterCurrent = parseFloat(document.getElementById('meterCurrent').value) || 0;
+            const totalUsage = meterCurrent - meterBefore;
+
+            if (totalUsage >= 0) {
+                document.getElementById('totalUsage').value = totalUsage;
+                document.getElementById('energyUsage').value = totalUsage;
+                document.getElementById('capacityUsage').value = totalUsage;
+                document.getElementById('networkUsage').value = totalUsage;
+                calculateCharges();
+            }
+        }
+
+        function calculateCharges() {
+            const totalUsage = parseFloat(document.getElementById('totalUsage').value) || 0;
+            const afaRate = parseFloat(document.getElementById('afaRate').value) || 0;
+
+            const energyAmount = totalUsage * 0.2703;
+            const afaAmount = totalUsage * afaRate;
+            const capacityAmount = totalUsage * 0.0883;
+            const networkAmount = totalUsage * 0.1482;
+            const retailAmount = 20;
+
+            document.getElementById('energyAmount').value = energyAmount.toFixed(2);
+            document.getElementById('afaAmount').value = afaAmount.toFixed(2);
+            document.getElementById('capacityAmount').value = capacityAmount.toFixed(2);
+            document.getElementById('networkAmount').value = networkAmount.toFixed(2);
+
+            const subtotal = energyAmount + afaAmount + capacityAmount + networkAmount + retailAmount;
+            document.getElementById('subtotalAmount').value = subtotal.toFixed(2);
+
+            const kwtbbBase = subtotal - retailAmount;
+            const kwtbbAmount = kwtbbBase * 0.016;
+            document.getElementById('kwtbbBase').value = kwtbbBase.toFixed(2);
+            document.getElementById('kwtbbAmount').value = kwtbbAmount.toFixed(2);
+
+            calculateLatePayment();
+        }
+
+        function calculateLatePayment() {
+            const paymentDueDate = document.getElementById('paymentDueDate').value;
+            const paymentDate = document.getElementById('paymentDate').value;
+            const subtotal = parseFloat(document.getElementById('subtotalAmount').value) || 0;
+            const kwtbbAmount = parseFloat(document.getElementById('kwtbbAmount').value) || 0;
+
+            let lateAmount = 0;
+            let lateDays = 0;
+
+            if (paymentDueDate && paymentDate) {
+                const dueDate = new Date(paymentDueDate);
+                const paidDate = new Date(paymentDate);
+
+                if (paidDate > dueDate) {
+                    const timeDiff = paidDate.getTime() - dueDate.getTime();
+                    lateDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    const lateMonths = (lateDays / 30);
+                    lateAmount = (subtotal + kwtbbAmount) * 0.01 * lateMonths;
+                }
+            }
+
+            document.getElementById('lateDays').value = lateDays;
+            document.getElementById('lateAmount').value = lateAmount.toFixed(2);
+
+            const totalAmount = subtotal + kwtbbAmount + lateAmount;
+            document.getElementById('totalChargeAmount').value = totalAmount.toFixed(2);
+        }
+
+        function generatePDF() {
+            // Populate PDF fields
+            document.getElementById('pdfUserName').textContent = document.getElementById('userName').value;
+            document.getElementById('pdfMeterNumber').textContent = document.getElementById('meterNumber').value;
+            document.getElementById('pdfAccountNumber').textContent = document.getElementById('accountNumber').value;
+            document.getElementById('pdfAddress').textContent = document.getElementById('address').value;
+            document.getElementById('pdfTariff').textContent = document.getElementById('tariff').value;
+
+            // Set bill date to today
+            const today = new Date();
+            document.getElementById('pdfBillDate').textContent = today.toLocaleDateString();
+
+            // Billing period display
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate && endDate) {
+                const startFormatted = new Date(startDate).toLocaleDateString();
+                const endFormatted = new Date(endDate).toLocaleDateString();
+                document.getElementById('pdfBillingPeriodDisplay').textContent = `${startFormatted} - ${endFormatted}`;
+            }
+
+            document.getElementById('pdfBillingDays').textContent = document.getElementById('billingDays').value;
+            document.getElementById('pdfPaymentDueDate').textContent = new Date(document.getElementById('paymentDueDate').value).toLocaleDateString();
+            document.getElementById('pdfMeterBefore').textContent = document.getElementById('meterBefore').value;
+            document.getElementById('pdfMeterCurrent').textContent = document.getElementById('meterCurrent').value;
+            document.getElementById('pdfTotalUsage').textContent = document.getElementById('totalUsage').value;
+
+            // Charges
+            document.getElementById('pdfEnergyUsage').textContent = document.getElementById('energyUsage').value;
+            document.getElementById('pdfEnergyAmount').textContent = document.getElementById('energyAmount').value;
+            document.getElementById('pdfAfaUsage').textContent = document.getElementById('totalUsage').value;
+            document.getElementById('pdfAfaAmount').textContent = document.getElementById('afaAmount').value;
+            document.getElementById('pdfCapacityUsage').textContent = document.getElementById('capacityUsage').value;
+            document.getElementById('pdfCapacityAmount').textContent = document.getElementById('capacityAmount').value;
+            document.getElementById('pdfNetworkUsage').textContent = document.getElementById('networkUsage').value;
+            document.getElementById('pdfNetworkAmount').textContent = document.getElementById('networkAmount').value
+
+
+            document.getElementById('pdfRetailAmount').textContent = document.getElementById('retailAmount').value;
+            document.getElementById('pdfSubtotalAmount').textContent = document.getElementById('subtotalAmount').value;
+            document.getElementById('pdfKwtbbBase').textContent = document.getElementById('kwtbbBase').value;
+            document.getElementById('pdfKwtbbAmount').textContent = document.getElementById('kwtbbAmount').value;
+            document.getElementById('pdfLateDays').textContent = document.getElementById('lateDays').value;
+            document.getElementById('pdfLateAmount').textContent = document.getElementById('lateAmount').value;
+            document.getElementById('pdfTotalChargeAmount').textContent = document.getElementById('totalChargeAmount').value;
+            document.getElementById('pdfDueDate').textContent = new Date(document.getElementById('paymentDueDate').value).toLocaleDateString();
+
+            window.print();
+        }
+
+        const translations = {
+            en: {
+                mainTitle: "UNITEN Electricity Billing",
+                userInfoTitle: "User Information",
+                nameLabel: "Name:",
+                meterLabel: "Meter Number:",
+                accountLabel: "Account Number:",
+                addressLabel: "Address:",
+                tariffLabel: "Tariff:",
+                billingTitle: "Billing Period",
+                startDateLabel: "Starting Date:",
+                endDateLabel: "Ending Date:",
+                billingDaysLabel: "Billing Period (Days):",
+                paymentDueDateLabel: "Payment Due Date:",
+                paymentDateLabel: "User Payment Date:",
+                meterReadingTitle: "Meter Reading",
+                meterBeforeLabel: "Meter Reading Before (kWh):",
+                meterCurrentLabel: "Meter Reading Current (kWh):",
+                totalUsageLabel: "Total Usage (kWh):",
+                chargeTitle: "Caj Penjanaan (Charges)",
+                descHeader: "Type of Charges",
+                usageHeader: "Usage/Quantity",
+                amountHeader: "Amount (RM)",
+                energyDesc: "Energy Charge (RM0.2703/kWh)",
+                afaDesc: "Automatic Fuel Adjustment (AFA) (RM/kWh)",
+                capacityDesc: "Capacity Charge (RM0.0883/kWh)",
+                networkDesc: "Network Fees (RM0.1482/kWh)",
+                retailDesc: "Retail Charge (RM)",
+                subtotalDesc: "Subtotal Amount (RM)",
+                kwtbbDesc: "KWTBB (1.6%) (RM)",
+                lateDesc: "Late Payment Surcharge (1%/month) (RM)",
+                totalDesc: "Total Charge Amount",
+                langToggle: "BM"
+            },
+            ms: {
+                mainTitle: "Sistem Bil Elektrik UNITEN",
+                userInfoTitle: "Maklumat Pengguna",
+                nameLabel: "Nama:",
+                meterLabel: "Nombor Meter:",
+                accountLabel: "Nombor Akaun:",
+                addressLabel: "Alamat:",
+                tariffLabel: "Tarif:",
+                billingTitle: "Tempoh Pengebilan",
+                startDateLabel: "Tarikh Mula:",
+                endDateLabel: "Tarikh Akhir:",
+                billingDaysLabel: "Tempoh Pengebilan (Hari):",
+                paymentDueDateLabel: "Tarikh Akhir Bayaran:",
+                paymentDateLabel: "Tarikh Bayaran Pengguna:",
+                meterReadingTitle: "Bacaan Meter",
+                meterBeforeLabel: "Bacaan Meter Sebelum (kWh):",
+                meterCurrentLabel: "Bacaan Meter Semasa (kWh):",
+                totalUsageLabel: "Jumlah Penggunaan (kWh):",
+                chargeTitle: "Caj Penjanaan",
+                descHeader: "Jenis Caj",
+                usageHeader: "Penggunaan/Kuantiti",
+                amountHeader: "Jumlah (RM)",
+                energyDesc: "Caj Tenaga (RM0.2703/kWh)",
+                afaDesc: "Pelarasan Bahan Api Automatik (AFA) (RM/kWh)",
+                capacityDesc: "Caj Kapasiti (RM0.0883/kWh)",
+                networkDesc: "Yuran Rangkaian (RM0.1482/kWh)",
+                retailDesc: "Caj Runcit (RM)",
+                subtotalDesc: "Jumlah Kecil (RM)",
+                kwtbbDesc: "KWTBB (1.6%) (RM)",
+                lateDesc: "Surcaj Lewat Bayar (1%/bulan) (RM)",
+                totalDesc: "Jumlah Caj Keseluruhan",
+                langToggle: "EN"
+            }
+        };
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'ms' : 'en';
+            const trans = translations[currentLanguage];
+
+            Object.keys(trans).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.tagName === 'INPUT' || element.tagName === 'BUTTON') {
+                        if (key === 'langToggle') {
+                            element.textContent = trans[key];
+                        } else {
+                            element.placeholder = trans[key];
+                        }
+                    } else {
+                        element.textContent = trans[key];
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
